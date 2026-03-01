@@ -25,28 +25,19 @@ def save_config(config: dict) -> None:
 def resolve_token(cli_token: str | None) -> str | None:
     if cli_token:
         return cli_token
-    env_token = os.environ.get("ASANA_TOKEN")
-    if env_token:
-        return env_token
-    return load_config().get("token")
+    return os.environ.get("ASANA_TOKEN")
 
 
 def resolve_workspace(cli_workspace: str | None) -> str | None:
     if cli_workspace:
         return cli_workspace
-    env_ws = os.environ.get("ASANA_WORKSPACE")
-    if env_ws:
-        return env_ws
-    return load_config().get("workspace")
+    return os.environ.get("ASANA_WORKSPACE")
 
 
 def resolve_project(cli_project: str | None) -> str | None:
     if cli_project:
         return cli_project
-    env_proj = os.environ.get("ASANA_PROJECT")
-    if env_proj:
-        return env_proj
-    return load_config().get("project")
+    return os.environ.get("ASANA_PROJECT")
 
 
 def get_project_cache(project_gid: str) -> dict | None:

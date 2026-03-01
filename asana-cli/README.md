@@ -8,13 +8,17 @@ Asana CLI for AI agents. JSON output by default, no interactive prompts, clean s
 uv sync
 ```
 
-## Authentication
+## Environment
 
-Three ways to provide your Asana Personal Access Token (in priority order):
+All credentials and project context come from environment variables or CLI flags (not from the config file):
 
-1. `--token` flag: `asana --token <pat> workspace list`
-2. `ASANA_TOKEN` env var: `export ASANA_TOKEN=<pat>`
-3. Config file: `asana config set --token <pat>` (saves to `~/.config/asana-cli/config.json`)
+| Variable | Flag | Description |
+|----------|------|-------------|
+| `ASANA_TOKEN` | `--token` | Asana Personal Access Token **(required)** |
+| `ASANA_WORKSPACE` | `--workspace` | Workspace GID |
+| `ASANA_PROJECT` | | Default project GID (used by `task next`, `comment check`) |
+
+CLI flags take priority over environment variables.
 
 ## Global Flags
 
@@ -39,10 +43,7 @@ Global flags go **before** the subcommand: `asana --pretty task list --project <
 ### config
 
 ```bash
-asana config show                        # show current config as JSON
-asana config set --workspace <gid>       # save default workspace
-asana config set --token <pat>           # save token
-asana config set --project <gid>         # save default project
+asana config show                        # show internal config (field cache)
 ```
 
 ### workspace
