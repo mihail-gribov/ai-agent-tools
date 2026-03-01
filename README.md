@@ -22,6 +22,13 @@ Verify:
 ait-asana --version
 ```
 
+## Uninstall
+
+```bash
+uv tool uninstall asana-cli
+rm -rf ~/.ai-agent-tools
+```
+
 ## License
 
 Apache 2.0 — see [LICENSE](LICENSE). Attribution is required.
