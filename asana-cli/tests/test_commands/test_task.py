@@ -36,6 +36,60 @@ def test_task_get():
     obj["client"].get.assert_called_once()
 
 
+def test_task_get_without_history_flag():
+    obj = make_ctx()
+    obj["client"].get.return_value = {"gid": "123", "name": "Test Task"}
+    result = invoke(["task", "get", "123"], obj)
+    assert result.exit_code == 0
+    data = json.loads(result.output)
+    assert "status_history" not in data
+    obj["client"].get_all.assert_not_called()
+
+
+def test_task_get_with_history():
+    obj = make_ctx()
+    obj["client"].get.return_value = {"gid": "123", "name": "Test Task"}
+    obj["client"].get_all.return_value = [
+        {
+            "resource_subtype": "enum_custom_field_changed",
+            "text": 'John changed Status from "New" to "In progress"',
+            "created_at": "2026-01-15T10:00:00.000Z",
+        },
+        {
+            "resource_subtype": "enum_custom_field_changed",
+            "text": 'John changed Status from "In progress" to "Need info"',
+            "created_at": "2026-01-16T12:00:00.000Z",
+        },
+        {
+            "resource_subtype": "comment_added",
+            "text": "Some comment",
+            "created_at": "2026-01-16T13:00:00.000Z",
+        },
+    ]
+    result = invoke(["task", "get", "123", "--history"], obj)
+    assert result.exit_code == 0
+    data = json.loads(result.output)
+    assert data["gid"] == "123"
+    assert len(data["status_history"]) == 2
+    assert data["status_history"][0] == {
+        "from": "New",
+        "to": "In progress",
+        "at": "2026-01-15T10:00:00.000Z",
+    }
+    assert data["status_history"][1]["from"] == "In progress"
+    assert data["status_history"][1]["to"] == "Need info"
+
+
+def test_task_get_history_empty():
+    obj = make_ctx()
+    obj["client"].get.return_value = {"gid": "123", "name": "Test Task"}
+    obj["client"].get_all.return_value = []
+    result = invoke(["task", "get", "123", "--history"], obj)
+    assert result.exit_code == 0
+    data = json.loads(result.output)
+    assert data["status_history"] == []
+
+
 def test_task_list_by_project():
     obj = make_ctx()
     obj["client"].get_all.return_value = [

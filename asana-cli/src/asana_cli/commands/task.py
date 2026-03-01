@@ -1,5 +1,6 @@
 """Task commands — CRUD, search, organization."""
 
+import re
 import sys
 
 import click
@@ -16,6 +17,28 @@ from asana_cli.output import output, output_error
 
 # Known names for the status field (case-insensitive matching)
 _STATUS_FIELD_NAMES = {"status", "статус"}
+
+
+def _parse_status_history(stories: list) -> list:
+    """Extract status transitions from task stories."""
+    # Asana story text for enum changes: 'changed Status from "X" to "Y"'
+    pattern = re.compile(
+        r'changed\s+(?:Status|Статус)\s+from\s+"([^"]+)"\s+to\s+"([^"]+)"',
+        re.IGNORECASE,
+    )
+    history = []
+    for story in stories:
+        if story.get("resource_subtype") != "enum_custom_field_changed":
+            continue
+        text = story.get("text", "")
+        m = pattern.search(text)
+        if m:
+            history.append({
+                "from": m.group(1),
+                "to": m.group(2),
+                "at": story.get("created_at"),
+            })
+    return history
 
 
 def parse_custom_fields(values: tuple[str, ...]) -> dict:
@@ -154,12 +177,20 @@ def task_search(
 
 @task_group.command("get")
 @click.argument("gid")
+@click.option("--history", is_flag=True, default=False, help="Include status change history")
 @click.pass_context
-def task_get(ctx: click.Context, gid: str) -> None:
+def task_get(ctx: click.Context, gid: str, history: bool) -> None:
     """Get full task details."""
     client = require_client(ctx)
     params = opt_fields_params(ctx)
     data = client.get(f"/tasks/{gid}", params)
+    if history:
+        stories = client.get_all(
+            f"/tasks/{gid}/stories",
+            {"opt_fields": "resource_subtype,text,created_at"},
+            no_paginate=ctx.obj["no_paginate"],
+        )
+        data["status_history"] = _parse_status_history(stories)
     output(data, pretty=ctx.obj["pretty"])
 
 
