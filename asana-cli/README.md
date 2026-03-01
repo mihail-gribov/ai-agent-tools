@@ -2,10 +2,11 @@
 
 Asana CLI for AI agents. JSON output by default, no interactive prompts, clean structured commands.
 
-## Install
+## Development
 
 ```bash
-uv sync
+uv sync              # install dependencies
+uv run pytest -v     # run tests
 ```
 
 ## Environment
