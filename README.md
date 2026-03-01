@@ -16,6 +16,12 @@ curl -sSL https://raw.githubusercontent.com/mihail-gribov/ai-agent-tools/main/in
 
 Requires [git](https://git-scm.com/) and [uv](https://docs.astral.sh/uv/).
 
+Verify:
+
+```bash
+asana --version
+```
+
 ## License
 
 Apache 2.0 — see [LICENSE](LICENSE). Attribution is required.

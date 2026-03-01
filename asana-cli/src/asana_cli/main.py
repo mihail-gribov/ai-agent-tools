@@ -4,6 +4,8 @@ import sys
 
 import click
 
+from importlib.metadata import version
+
 from asana_cli.client import AsanaAPIError, AsanaClient
 from asana_cli.config import resolve_token, resolve_workspace
 from asana_cli.output import output_error
@@ -21,6 +23,7 @@ class AsanaCLI(click.Group):
 
 
 @click.group(cls=AsanaCLI)
+@click.version_option(version=version("asana-cli"), prog_name="asana-cli")
 @click.option("--token", envvar="ASANA_TOKEN", default=None, help="Asana PAT")
 @click.option("--workspace", default=None, help="Workspace GID")
 @click.option("--pretty", is_flag=True, help="Pretty-print JSON output")
