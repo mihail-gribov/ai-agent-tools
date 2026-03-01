@@ -10,16 +10,8 @@ CLI tools that let AI agents work in the same services as your team — project 
 
 ## Install
 
-Install all tools:
-
 ```bash
 curl -sSL https://raw.githubusercontent.com/mihail-gribov/ai-agent-tools/main/install.sh | bash
-```
-
-Or pick specific tools:
-
-```bash
-curl -sSL https://raw.githubusercontent.com/mihail-gribov/ai-agent-tools/main/install.sh | bash -s -- asana-cli
 ```
 
 Requires [git](https://git-scm.com/) and [uv](https://docs.astral.sh/uv/).
