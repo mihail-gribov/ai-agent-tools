@@ -13,7 +13,7 @@ dependencies = [
 ]
 
 [project.scripts]
-asana = "asana_cli.main:cli"
+ait-asana = "asana_cli.main:cli"
 
 [build-system]
 requires = ["uv_build>=0.8.17,<0.9.0"]

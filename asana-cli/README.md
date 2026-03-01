@@ -31,7 +31,7 @@ CLI flags take priority over environment variables.
 | `--fields TEXT` | Comma-separated `opt_fields` override |
 | `--no-paginate` | Disable automatic pagination |
 
-Global flags go **before** the subcommand: `asana --pretty task list --project <gid>`
+Global flags go **before** the subcommand: `ait-asana --pretty task list --project <gid>`
 
 ## Output
 
@@ -44,20 +44,20 @@ Global flags go **before** the subcommand: `asana --pretty task list --project <
 ### config
 
 ```bash
-asana config show                        # show internal config (field cache)
+ait-asana config show                        # show internal config (field cache)
 ```
 
 ### workspace
 
 ```bash
-asana workspace list                     # list accessible workspaces
+ait-asana workspace list                     # list accessible workspaces
 ```
 
 ### project
 
 ```bash
-asana project list [--archived]          # list projects in workspace
-asana project get <gid>                  # project details
+ait-asana project list [--archived]          # list projects in workspace
+ait-asana project get <gid>                  # project details
 ```
 
 | Flag | Description |
@@ -67,16 +67,16 @@ asana project get <gid>                  # project details
 ### section
 
 ```bash
-asana section list --project <gid>       # list sections in a project
-asana section get <gid>                  # section details
+ait-asana section list --project <gid>       # list sections in a project
+ait-asana section get <gid>                  # section details
 ```
 
 ### task list
 
 ```bash
-asana task list --project <gid>          # list tasks in project
-asana task list --section <gid>          # list tasks in section
-asana task list --assignee me            # list tasks assigned to me
+ait-asana task list --project <gid>          # list tasks in project
+ait-asana task list --section <gid>          # list tasks in section
+ait-asana task list --assignee me            # list tasks assigned to me
 ```
 
 | Flag | Description |
@@ -90,11 +90,11 @@ asana task list --assignee me            # list tasks assigned to me
 ### task search
 
 ```bash
-asana task search --text "bug"
-asana task search --assignee me --completed
-asana task search --project <gid> --due-before 2026-04-01
-asana task search --custom-field 111111=AAA           # filter by custom field (e.g. status)
-asana task search --section <gid>                     # filter by section
+ait-asana task search --text "bug"
+ait-asana task search --assignee me --completed
+ait-asana task search --project <gid> --due-before 2026-04-01
+ait-asana task search --custom-field 111111=AAA           # filter by custom field (e.g. status)
+ait-asana task search --section <gid>                     # filter by section
 ```
 
 | Flag | Description |
@@ -114,15 +114,15 @@ asana task search --section <gid>                     # filter by section
 ### task get
 
 ```bash
-asana task get <gid>                     # full task details
+ait-asana task get <gid>                     # full task details
 ```
 
 ### task create
 
 ```bash
-asana task create --name "Fix login bug" --project <gid>
-asana task create --name "Subtask" --parent <gid>
-asana task create --name "Task" --project <gid> --section <gid> --assignee me --due-on 2026-03-15
+ait-asana task create --name "Fix login bug" --project <gid>
+ait-asana task create --name "Subtask" --parent <gid>
+ait-asana task create --name "Task" --project <gid> --section <gid> --assignee me --due-on 2026-03-15
 ```
 
 | Flag | Description |
@@ -141,10 +141,10 @@ asana task create --name "Task" --project <gid> --section <gid> --assignee me --
 ### task update
 
 ```bash
-asana task update <gid> --name "New name"
-asana task update <gid> --assignee me --due-on 2026-04-01
-asana task update <gid> --completed
-asana task update <gid> --custom-field 12345=High --custom-field 67890=42
+ait-asana task update <gid> --name "New name"
+ait-asana task update <gid> --assignee me --due-on 2026-04-01
+ait-asana task update <gid> --completed
+ait-asana task update <gid> --custom-field 12345=High --custom-field 67890=42
 ```
 
 | Flag | Description |
@@ -160,38 +160,38 @@ asana task update <gid> --custom-field 12345=High --custom-field 67890=42
 ### task complete
 
 ```bash
-asana task complete <gid>                # shortcut for marking complete
+ait-asana task complete <gid>                # shortcut for marking complete
 ```
 
 ### task delete
 
 ```bash
-asana task delete <gid>
+ait-asana task delete <gid>
 ```
 
 ### task subtasks
 
 ```bash
-asana task subtasks <gid>               # list subtasks of a task
+ait-asana task subtasks <gid>               # list subtasks of a task
 ```
 
 ### task add-project
 
 ```bash
-asana task add-project <gid> --project <gid>
-asana task add-project <gid> --project <gid> --section <gid>
+ait-asana task add-project <gid> --project <gid>
+ait-asana task add-project <gid> --project <gid> --section <gid>
 ```
 
 ### task remove-project
 
 ```bash
-asana task remove-project <gid> --project <gid>
+ait-asana task remove-project <gid> --project <gid>
 ```
 
 ### task move
 
 ```bash
-asana task move <gid> --section <gid>   # move task to a section
+ait-asana task move <gid> --section <gid>   # move task to a section
 ```
 
 ### task next
@@ -199,9 +199,9 @@ asana task move <gid> --section <gid>   # move task to a section
 Find the next actionable task: status = "New" and not blocked by any incomplete dependency.
 
 ```bash
-asana task next                          # find next "New" unblocked task
-asana task next --project <gid>          # override project
-asana task next --status "Planning"      # look for a different status
+ait-asana task next                          # find next "New" unblocked task
+ait-asana task next --project <gid>          # override project
+ait-asana task next --status "Planning"      # look for a different status
 ```
 
 Auto-discovers the status custom field from the project and caches it in
@@ -217,30 +217,30 @@ Two sides of the same relationship:
 - **dependent** = another task is **blocked by** this task
 
 ```bash
-asana task dependencies <gid>                       # list tasks this task is waiting on
-asana task dependents <gid>                         # list tasks blocked by this task
+ait-asana task dependencies <gid>                       # list tasks this task is waiting on
+ait-asana task dependents <gid>                         # list tasks blocked by this task
 
-asana task add-dependency <gid> --dependency <gid>  # this task waits on another
-asana task remove-dependency <gid> --dependency <gid>
+ait-asana task add-dependency <gid> --dependency <gid>  # this task waits on another
+ait-asana task remove-dependency <gid> --dependency <gid>
 
-asana task add-dependent <gid> --dependent <gid>    # another task is blocked by this one
-asana task remove-dependent <gid> --dependent <gid>
+ait-asana task add-dependent <gid> --dependent <gid>    # another task is blocked by this one
+ait-asana task remove-dependent <gid> --dependent <gid>
 ```
 
 Example — task B is blocked by task A:
 
 ```bash
 # Either direction works, same result:
-asana task add-dependency B --dependency A   # B waits on A
-asana task add-dependent A --dependent B     # A blocks B
+ait-asana task add-dependency B --dependency A   # B waits on A
+ait-asana task add-dependent A --dependent B     # A blocks B
 ```
 
 ### comment
 
 ```bash
-asana comment list <task_gid>            # list comments on a task
-asana comment add <task_gid> --text "Looks good"
-echo "Multiline note" | asana comment add <task_gid> --text -
+ait-asana comment list <task_gid>            # list comments on a task
+ait-asana comment add <task_gid> --text "Looks good"
+echo "Multiline note" | ait-asana comment add <task_gid> --text -
 ```
 
 | Flag | Description |
@@ -254,8 +254,8 @@ project for tasks with a given status and returns those where the last comment
 is not from the current user.
 
 ```bash
-asana comment check                          # tasks with status "Need info"
-asana comment check --status "Planning"      # use a different status
+ait-asana comment check                          # tasks with status "Need info"
+ait-asana comment check --status "Planning"      # use a different status
 ```
 
 | Flag | Description |
@@ -263,43 +263,42 @@ asana comment check --status "Planning"      # use a different status
 | `--status TEXT` | Status to filter tasks by (default: `Need info`) |
 
 Returns a JSON list of `{"task": {...}, "comment": {...}}` objects, or `[]` if
-there is nothing to respond to. Uses the project from config
-(`asana config set --project <gid>`).
+there is nothing to respond to. Uses the project from `ASANA_PROJECT` env var.
 
 ### tag
 
 ```bash
-asana tag list                           # list tags in workspace
-asana tag get <gid>                      # tag details
+ait-asana tag list                           # list tags in workspace
+ait-asana tag get <gid>                      # tag details
 ```
 
 ## Examples
 
 ```bash
 # Full CRUD cycle
-asana task create --name "Test" --project 123456
-asana task get 789012
-asana task update 789012 --assignee me --due-on 2026-03-15
-asana task complete 789012
-asana task delete 789012
+ait-asana task create --name "Test" --project 123456
+ait-asana task get 789012
+ait-asana task update 789012 --assignee me --due-on 2026-03-15
+ait-asana task complete 789012
+ait-asana task delete 789012
 
 # Search and filter
-asana task search --text "deploy" --sort-by due_date
-asana task list --assignee me --completed
+ait-asana task search --text "deploy" --sort-by due_date
+ait-asana task list --assignee me --completed
 
 # Organization
-asana task move 789012 --section 345678
-asana task add-project 789012 --project 111111 --section 222222
+ait-asana task move 789012 --section 345678
+ait-asana task add-project 789012 --project 111111 --section 222222
 
 # Dependencies
-asana task add-dependency 789012 --dependency 111111  # 789012 waits on 111111
-asana task dependencies 789012                        # list what 789012 waits on
-asana task dependents 111111                          # list what 111111 blocks
+ait-asana task add-dependency 789012 --dependency 111111  # 789012 waits on 111111
+ait-asana task dependencies 789012                        # list what 789012 waits on
+ait-asana task dependents 111111                          # list what 111111 blocks
 
 # Pipe multiline notes
-cat notes.md | asana task create --name "With notes" --project 123456 --notes -
+cat notes.md | ait-asana task create --name "With notes" --project 123456 --notes -
 
 # Check for comments needing a response
-asana comment check                          # "Need info" tasks with unresponded comments
-asana comment check --status "Planning"      # same, but for "Planning" status
+ait-asana comment check                          # "Need info" tasks with unresponded comments
+ait-asana comment check --status "Planning"      # same, but for "Planning" status
 ```

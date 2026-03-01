@@ -19,7 +19,7 @@ Requires [git](https://git-scm.com/) and [uv](https://docs.astral.sh/uv/).
 Verify:
 
 ```bash
-asana --version
+ait-asana --version
 ```
 
 ## License
