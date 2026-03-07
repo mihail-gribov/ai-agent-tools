@@ -33,10 +33,12 @@ def _parse_status_history(stories: list) -> list:
         text = story.get("text", "")
         m = pattern.search(text)
         if m:
+            created_by = story.get("created_by") or {}
             history.append({
                 "from": m.group(1),
                 "to": m.group(2),
                 "at": story.get("created_at"),
+                "by": created_by.get("gid"),
             })
     return history
 
@@ -182,12 +184,22 @@ def task_search(
 def task_get(ctx: click.Context, gid: str, history: bool) -> None:
     """Get full task details."""
     client = require_client(ctx)
-    params = opt_fields_params(ctx)
+    defaults = None
+    if not ctx.obj.get("fields"):
+        defaults = (
+            "gid,name,notes,completed,completed_at,created_at,modified_at,"
+            "assignee,assignee.name,due_on,start_on,parent,parent.name,"
+            "custom_fields,tags,tags.name,followers,followers.name,"
+            "memberships.section.gid,memberships.section.name,"
+            "memberships.project.gid,memberships.project.name,"
+            "projects,projects.name,workspace,permalink_url"
+        )
+    params = opt_fields_params(ctx, defaults)
     data = client.get(f"/tasks/{gid}", params)
     if history:
         stories = client.get_all(
             f"/tasks/{gid}/stories",
-            {"opt_fields": "resource_subtype,text,created_at"},
+            {"opt_fields": "resource_subtype,text,created_at,created_by.gid"},
             no_paginate=ctx.obj["no_paginate"],
         )
         data["status_history"] = _parse_status_history(stories)
@@ -501,11 +513,13 @@ def _get_status_info(client, project_gid: str) -> dict:
 @task_group.command("next")
 @click.option("--project", "project_gid", default=None, help="Project GID (or use config)")
 @click.option("--status", "status_name", default="New", help="Status name to look for (default: New)")
+@click.option("--assignee", default=None, help="Assignee GID or 'me'")
 @click.pass_context
 def task_next(
     ctx: click.Context,
     project_gid: str | None,
     status_name: str,
+    assignee: str | None,
 ) -> None:
     """Find the next actionable task: status=New and not blocked by incomplete tasks.
 
@@ -549,6 +563,8 @@ def task_next(
         f"custom_fields.{status_field}.value": status_value,
         "sort_by": "created_at",
     }
+    if assignee:
+        params["assignee.any"] = assignee
     candidates = client.get(f"/workspaces/{ws}/tasks/search", params)
     if not isinstance(candidates, list):
         candidates = [candidates] if candidates else []

@@ -54,11 +54,13 @@ def test_task_get_with_history():
             "resource_subtype": "enum_custom_field_changed",
             "text": 'John changed Status from "New" to "In progress"',
             "created_at": "2026-01-15T10:00:00.000Z",
+            "created_by": {"gid": "USER1"},
         },
         {
             "resource_subtype": "enum_custom_field_changed",
             "text": 'John changed Status from "In progress" to "Need info"',
             "created_at": "2026-01-16T12:00:00.000Z",
+            "created_by": {"gid": "USER2"},
         },
         {
             "resource_subtype": "comment_added",
@@ -75,9 +77,11 @@ def test_task_get_with_history():
         "from": "New",
         "to": "In progress",
         "at": "2026-01-15T10:00:00.000Z",
+        "by": "USER1",
     }
     assert data["status_history"][1]["from"] == "In progress"
     assert data["status_history"][1]["to"] == "Need info"
+    assert data["status_history"][1]["by"] == "USER2"
 
 
 def test_task_get_history_empty():
@@ -406,3 +410,18 @@ def test_task_next_auto_discovers(monkeypatch):
     result = invoke(["task", "next", "--project", "proj99"], obj)
     assert result.exit_code == 0
     assert calls == ["proj99"]
+
+
+def test_task_next_assignee_filter(monkeypatch):
+    _patch_next(monkeypatch)
+    obj = make_ctx()
+    obj["client"].get.return_value = [{"gid": "t1", "name": "My task"}]
+    obj["client"].get_all.return_value = []
+    result = invoke(["task", "next", "--assignee", "user1"], obj)
+    assert result.exit_code == 0
+    data = json.loads(result.output)
+    assert data["gid"] == "t1"
+    # Verify assignee.any was passed in search params
+    call_args = obj["client"].get.call_args
+    params = call_args[0][1]
+    assert params["assignee.any"] == "user1"
