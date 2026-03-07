@@ -52,13 +52,17 @@ def test_task_get_with_history():
     obj["client"].get_all.return_value = [
         {
             "resource_subtype": "enum_custom_field_changed",
-            "text": 'John changed Status from "New" to "In progress"',
+            "custom_field": {"gid": "CF1", "name": "Status"},
+            "old_enum_value": {"gid": "E1", "name": "New"},
+            "new_enum_value": {"gid": "E2", "name": "In progress"},
             "created_at": "2026-01-15T10:00:00.000Z",
             "created_by": {"gid": "USER1"},
         },
         {
             "resource_subtype": "enum_custom_field_changed",
-            "text": 'John changed Status from "In progress" to "Need info"',
+            "custom_field": {"gid": "CF1", "name": "Status"},
+            "old_enum_value": {"gid": "E2", "name": "In progress"},
+            "new_enum_value": {"gid": "E3", "name": "Need info"},
             "created_at": "2026-01-16T12:00:00.000Z",
             "created_by": {"gid": "USER2"},
         },

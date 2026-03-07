@@ -1,6 +1,5 @@
 """Task commands — CRUD, search, organization."""
 
-import re
 import sys
 
 import click
@@ -19,27 +18,31 @@ from asana_cli.output import output, output_error
 _STATUS_FIELD_NAMES = {"status", "статус"}
 
 
-def _parse_status_history(stories: list) -> list:
-    """Extract status transitions from task stories."""
-    # Asana story text for enum changes: 'changed Status from "X" to "Y"'
-    pattern = re.compile(
-        r'changed\s+(?:Status|Статус)\s+from\s+"([^"]+)"\s+to\s+"([^"]+)"',
-        re.IGNORECASE,
-    )
+def _parse_status_history(stories: list, status_field_gid: str | None = None) -> list:
+    """Extract status transitions from task stories using structured fields."""
     history = []
     for story in stories:
         if story.get("resource_subtype") != "enum_custom_field_changed":
             continue
-        text = story.get("text", "")
-        m = pattern.search(text)
-        if m:
-            created_by = story.get("created_by") or {}
-            history.append({
-                "from": m.group(1),
-                "to": m.group(2),
-                "at": story.get("created_at"),
-                "by": created_by.get("gid"),
-            })
+        cf = story.get("custom_field") or {}
+        # Filter by status field GID if provided, otherwise match by name
+        if status_field_gid:
+            if cf.get("gid") != status_field_gid:
+                continue
+        else:
+            if cf.get("name", "").lower() not in _STATUS_FIELD_NAMES:
+                continue
+        old_val = story.get("old_enum_value") or {}
+        new_val = story.get("new_enum_value") or {}
+        if not new_val.get("name"):
+            continue
+        created_by = story.get("created_by") or {}
+        history.append({
+            "from": old_val.get("name", ""),
+            "to": new_val["name"],
+            "at": story.get("created_at"),
+            "by": created_by.get("gid"),
+        })
     return history
 
 
@@ -199,7 +202,7 @@ def task_get(ctx: click.Context, gid: str, history: bool) -> None:
     if history:
         stories = client.get_all(
             f"/tasks/{gid}/stories",
-            {"opt_fields": "resource_subtype,text,created_at,created_by.gid"},
+            {"opt_fields": "resource_subtype,text,created_at,created_by.gid,custom_field.gid,custom_field.name,new_enum_value.gid,new_enum_value.name,old_enum_value.gid,old_enum_value.name"},
             no_paginate=ctx.obj["no_paginate"],
         )
         data["status_history"] = _parse_status_history(stories)
