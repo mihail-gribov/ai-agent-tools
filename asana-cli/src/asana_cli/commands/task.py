@@ -285,6 +285,12 @@ def task_create(
     multiple=True,
     help="Custom field gid=value (repeatable)",
 )
+@click.option(
+    "--archive-notes",
+    is_flag=True,
+    default=False,
+    help="Save current description as a comment before replacing",
+)
 @click.pass_context
 def task_update(
     ctx: click.Context,
@@ -296,12 +302,24 @@ def task_update(
     start_on: str | None,
     completed: bool | None,
     custom_fields: tuple[str, ...],
+    archive_notes: bool,
 ) -> None:
     """Update a task."""
     client = require_client(ctx)
 
     if notes == "-":
         notes = sys.stdin.read()
+
+    # Archive current description as a comment before overwriting
+    if archive_notes and notes is not None:
+        task = client.get(f"/tasks/{gid}", {"opt_fields": "notes"})
+        old_notes = task.get("notes", "").strip()
+        if old_notes:
+            comment = (
+                "📋 Description archived before update:\n\n"
+                f"{old_notes}"
+            )
+            client.post(f"/tasks/{gid}/stories", {"text": comment})
 
     body: dict = {}
     if name is not None:

@@ -141,6 +141,40 @@ def test_task_update():
     assert data["name"] == "Updated"
 
 
+def test_task_update_archive_notes():
+    obj = make_ctx()
+    obj["client"].get.return_value = {"notes": "Old description"}
+    obj["client"].post.return_value = {"gid": "comment1"}
+    obj["client"].put.return_value = {"gid": "123", "notes": "New description"}
+    result = invoke(
+        ["task", "update", "123", "--notes", "New description", "--archive-notes"],
+        obj,
+    )
+    assert result.exit_code == 0
+    # Should have fetched old notes, posted comment, then updated
+    obj["client"].get.assert_called_once()
+    obj["client"].post.assert_called_once_with(
+        "/tasks/123/stories",
+        {"text": "📋 Description archived before update:\n\nOld description"},
+    )
+    obj["client"].put.assert_called_once_with(
+        "/tasks/123", {"notes": "New description"}
+    )
+
+
+def test_task_update_archive_notes_empty():
+    """Skip archiving when current description is empty."""
+    obj = make_ctx()
+    obj["client"].get.return_value = {"notes": ""}
+    obj["client"].put.return_value = {"gid": "123", "notes": "New description"}
+    result = invoke(
+        ["task", "update", "123", "--notes", "New description", "--archive-notes"],
+        obj,
+    )
+    assert result.exit_code == 0
+    obj["client"].post.assert_not_called()
+
+
 def test_task_complete():
     obj = make_ctx()
     obj["client"].put.return_value = {"gid": "123", "completed": True}
