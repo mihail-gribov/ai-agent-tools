@@ -4,6 +4,7 @@ import sys
 
 import click
 
+from asana_cli.rich_text import md_to_html
 from asana_cli.config import (
     get_project_cache,
     load_config,
@@ -247,7 +248,7 @@ def task_create(
 
     body: dict = {"name": name}
     if notes is not None:
-        body["notes"] = notes
+        body["html_notes"] = md_to_html(notes)
     if assignee:
         body["assignee"] = assignee
     if project_gid:
@@ -322,13 +323,13 @@ def task_update(
                 "📋 Description archived before update:\n\n"
                 f"{old_notes}"
             )
-            client.post(f"/tasks/{gid}/stories", {"text": comment})
+            client.post(f"/tasks/{gid}/stories", {"html_text": md_to_html(comment)})
 
     body: dict = {}
     if name is not None:
         body["name"] = name
     if notes is not None:
-        body["notes"] = notes
+        body["html_notes"] = md_to_html(notes)
     if assignee is not None:
         body["assignee"] = assignee
     if due_on is not None:

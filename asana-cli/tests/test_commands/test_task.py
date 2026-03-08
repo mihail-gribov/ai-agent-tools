@@ -159,10 +159,10 @@ def test_task_update_archive_notes():
     obj["client"].get.assert_called_once()
     obj["client"].post.assert_called_once_with(
         "/tasks/123/stories",
-        {"text": "📋 Description archived before update:\n\nOld description"},
+        {"html_text": "<body>📋 Description archived before update:Old description</body>"},
     )
     obj["client"].put.assert_called_once_with(
-        "/tasks/123", {"notes": "New description"}
+        "/tasks/123", {"html_notes": "<body>New description</body>"}
     )
 
 

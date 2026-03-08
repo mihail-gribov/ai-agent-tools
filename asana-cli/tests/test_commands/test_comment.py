@@ -66,7 +66,7 @@ def test_comment_add():
     assert data["text"] == "Nice"
     call_args = obj["client"].post.call_args
     assert call_args[0][0] == "/tasks/task1/stories"
-    assert call_args[0][1] == {"text": "Nice"}
+    assert call_args[0][1] == {"html_text": "<body>Nice</body>"}
 
 
 def test_comment_check_finds_unresponded(monkeypatch):

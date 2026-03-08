@@ -4,6 +4,7 @@ import sys
 
 import click
 
+from asana_cli.rich_text import md_to_html
 from asana_cli.commands.task import _get_status_info
 from asana_cli.config import resolve_project
 from asana_cli.main import opt_fields_params, require_client, require_workspace
@@ -42,7 +43,7 @@ def comment_add(ctx: click.Context, task_gid: str, text: str) -> None:
         text = sys.stdin.read()
 
     client = require_client(ctx)
-    data = client.post(f"/tasks/{task_gid}/stories", {"text": text})
+    data = client.post(f"/tasks/{task_gid}/stories", {"html_text": md_to_html(text)})
     output(data, pretty=ctx.obj["pretty"])
 
 
