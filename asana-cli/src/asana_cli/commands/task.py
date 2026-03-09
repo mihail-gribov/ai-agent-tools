@@ -129,6 +129,7 @@ def task_list(
     multiple=True,
     help="Filter by custom field: gid=value (repeatable). For enum fields use the enum option GID as value.",
 )
+@click.option("--status", "status_name", default=None, help="Status name (auto-resolves to custom field filter)")
 @click.pass_context
 def task_search(
     ctx: click.Context,
@@ -143,6 +144,7 @@ def task_search(
     modified_after: str | None,
     sort_by: str | None,
     custom_fields: tuple[str, ...],
+    status_name: str | None,
 ) -> None:
     """Search tasks in workspace."""
     client = require_client(ctx)
@@ -173,6 +175,19 @@ def task_search(
     for cf in custom_fields:
         gid, _, val = cf.partition("=")
         params[f"custom_fields.{gid}.value"] = val
+
+    # Resolve --status to custom field filter
+    if status_name:
+        proj = project_gid or resolve_project(None)
+        resolved = _resolve_status_to_custom_field(client, proj, status_name)
+        if resolved:
+            params[f"custom_fields.{resolved[0]}.value"] = resolved[1]
+        else:
+            output_error(
+                f"Cannot resolve status '{status_name}'. Provide --project with a valid status field.",
+                pretty=ctx.obj["pretty"],
+            )
+            sys.exit(1)
 
     # Search API doesn't paginate the same way; use get() directly
     data = client.get(f"/workspaces/{ws}/tasks/search", params)
@@ -210,6 +225,25 @@ def task_get(ctx: click.Context, gid: str, history: bool) -> None:
     output(data, pretty=ctx.obj["pretty"])
 
 
+def _resolve_status_to_custom_field(
+    client, project_gid: str | None, status_name: str,
+) -> tuple[str, str] | None:
+    """Resolve a status name to (field_gid, enum_option_gid).
+
+    Returns None if project is unknown or status field not found.
+    """
+    if not project_gid:
+        return None
+    info = _get_status_info(client, project_gid)
+    status_field = info.get("status_field")
+    if not status_field:
+        return None
+    status_value = info.get("statuses", {}).get(status_name)
+    if not status_value:
+        return None
+    return (status_field, status_value)
+
+
 @task_group.command("create")
 @click.option("--name", required=True, help="Task name")
 @click.option("--notes", default=None, help="Task description (use '-' for stdin)")
@@ -220,6 +254,7 @@ def task_get(ctx: click.Context, gid: str, history: bool) -> None:
 @click.option("--due-on", default=None, help="Due date (YYYY-MM-DD)")
 @click.option("--start-on", default=None, help="Start date (YYYY-MM-DD)")
 @click.option("--tags", default=None, help="Comma-separated tag GIDs")
+@click.option("--status", "status_name", default=None, help="Status name (auto-resolves to custom field)")
 @click.option(
     "--custom-field",
     "custom_fields",
@@ -238,6 +273,7 @@ def task_create(
     due_on: str | None,
     start_on: str | None,
     tags: str | None,
+    status_name: str | None,
     custom_fields: tuple[str, ...],
 ) -> None:
     """Create a new task."""
@@ -263,8 +299,21 @@ def task_create(
         body["start_on"] = start_on
     if tags:
         body["tags"] = [t.strip() for t in tags.split(",")]
-    if custom_fields:
-        body["custom_fields"] = parse_custom_fields(custom_fields)
+
+    cf_dict = parse_custom_fields(custom_fields) if custom_fields else {}
+    if status_name:
+        proj = project_gid or resolve_project(None)
+        resolved = _resolve_status_to_custom_field(client, proj, status_name)
+        if resolved:
+            cf_dict[resolved[0]] = resolved[1]
+        else:
+            output_error(
+                f"Cannot resolve status '{status_name}'. Provide --project with a valid status field.",
+                pretty=ctx.obj["pretty"],
+            )
+            sys.exit(1)
+    if cf_dict:
+        body["custom_fields"] = cf_dict
 
     # If workspace needed and no project specified
     if not project_gid and not parent_gid:
@@ -283,6 +332,7 @@ def task_create(
 @click.option("--due-on", default=None, help="Due date (YYYY-MM-DD)")
 @click.option("--start-on", default=None, help="Start date (YYYY-MM-DD)")
 @click.option("--completed/--no-completed", default=None, help="Mark completed/incomplete")
+@click.option("--status", "status_name", default=None, help="Status name (auto-resolves to custom field)")
 @click.option(
     "--custom-field",
     "custom_fields",
@@ -305,6 +355,7 @@ def task_update(
     due_on: str | None,
     start_on: str | None,
     completed: bool | None,
+    status_name: str | None,
     custom_fields: tuple[str, ...],
     archive_notes: bool,
 ) -> None:
@@ -338,8 +389,29 @@ def task_update(
         body["start_on"] = start_on
     if completed is not None:
         body["completed"] = completed
-    if custom_fields:
-        body["custom_fields"] = parse_custom_fields(custom_fields)
+
+    cf_dict = parse_custom_fields(custom_fields) if custom_fields else {}
+    if status_name:
+        # Discover project from task memberships
+        task_data = client.get(f"/tasks/{gid}", {"opt_fields": "memberships.project.gid"})
+        proj = None
+        for m in task_data.get("memberships", []):
+            proj = m.get("project", {}).get("gid")
+            if proj:
+                break
+        if not proj:
+            proj = resolve_project(None)
+        resolved = _resolve_status_to_custom_field(client, proj, status_name)
+        if resolved:
+            cf_dict[resolved[0]] = resolved[1]
+        else:
+            output_error(
+                f"Cannot resolve status '{status_name}'.",
+                pretty=ctx.obj["pretty"],
+            )
+            sys.exit(1)
+    if cf_dict:
+        body["custom_fields"] = cf_dict
 
     data = client.put(f"/tasks/{gid}", body)
     output(data, pretty=ctx.obj["pretty"])

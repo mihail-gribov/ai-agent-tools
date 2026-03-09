@@ -1,4 +1,4 @@
-"""Custom field commands — enum options management."""
+"""Custom field commands — enum options management and value set/remove."""
 
 import click
 
@@ -83,4 +83,27 @@ def cf_update_option(
         ctx.exit(1)
         return
     data = client.put(f"/enum_options/{option_gid}", body)
+    output(data, pretty=ctx.obj["pretty"])
+
+
+@custom_field_group.command("set")
+@click.argument("task_gid")
+@click.option("--field", "field_id", required=True, help="Custom field GID")
+@click.option("--value", required=True, help="Value to set (for enum fields use the option GID)")
+@click.pass_context
+def cf_set(ctx: click.Context, task_gid: str, field_id: str, value: str) -> None:
+    """Set a custom field value on a task."""
+    client = require_client(ctx)
+    data = client.put(f"/tasks/{task_gid}", {"custom_fields": {field_id: value}})
+    output(data, pretty=ctx.obj["pretty"])
+
+
+@custom_field_group.command("remove")
+@click.argument("task_gid")
+@click.option("--field", "field_id", required=True, help="Custom field GID")
+@click.pass_context
+def cf_remove(ctx: click.Context, task_gid: str, field_id: str) -> None:
+    """Remove a custom field value from a task (set to null)."""
+    client = require_client(ctx)
+    data = client.put(f"/tasks/{task_gid}", {"custom_fields": {field_id: None}})
     output(data, pretty=ctx.obj["pretty"])

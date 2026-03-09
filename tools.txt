@@ -1,1 +1,2 @@
 asana-cli  Manage Asana tasks, track statuses, and respond to comments
+clickup-cli  Manage ClickUp tasks, track statuses, and respond to comments

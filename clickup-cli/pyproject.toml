@@ -1,0 +1,27 @@
+[project]
+name = "clickup-cli"
+version = "0.1.0"
+description = "ClickUp CLI for AI agents — JSON output, no interactive prompts"
+readme = "README.md"
+authors = [
+    { name = "Mike", email = "mihail.gribov.rs@gmail.com" }
+]
+requires-python = ">=3.12"
+dependencies = [
+    "click>=8.1",
+    "httpx>=0.27",
+]
+
+[project.scripts]
+ait-clickup = "clickup_cli.main:cli"
+
+[build-system]
+requires = ["uv_build>=0.8.17,<0.9.0"]
+build-backend = "uv_build"
+
+[dependency-groups]
+dev = [
+    "pytest>=8.0",
+    "respx>=0.22",
+    "pytest-mock>=3.14",
+]

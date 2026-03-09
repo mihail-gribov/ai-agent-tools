@@ -2,6 +2,8 @@
 
 Asana CLI for AI agents. JSON output by default, no interactive prompts, clean structured commands.
 
+Part of the [Universal CLI API](../API.md) for project trackers.
+
 ## Development
 
 ```bash
@@ -17,7 +19,7 @@ All credentials and project context come from environment variables or CLI flags
 |----------|------|-------------|
 | `ASANA_TOKEN` | `--token` | Asana Personal Access Token **(required)** |
 | `ASANA_WORKSPACE` | `--workspace` | Workspace GID |
-| `ASANA_PROJECT` | | Default project GID (used by `task next`, `comment check`) |
+| `ASANA_PROJECT` | | Default project GID (used by `task next`, `comment check`, `--status` resolution) |
 
 CLI flags take priority over environment variables.
 
@@ -57,17 +59,15 @@ ait-asana workspace list                     # list accessible workspaces
 
 ```bash
 ait-asana project list [--archived]          # list projects in workspace
+ait-asana project create --name "My Project" [--color light-green] [--layout board] [--public]
 ait-asana project get <gid>                  # project details
 ```
-
-| Flag | Description |
-|------|-------------|
-| `--archived` | Include archived projects |
 
 ### section
 
 ```bash
 ait-asana section list --project <gid>       # list sections in a project
+ait-asana section create --project <gid> --name "Backlog"
 ait-asana section get <gid>                  # section details
 ```
 
@@ -91,10 +91,11 @@ ait-asana task list --assignee me            # list tasks assigned to me
 
 ```bash
 ait-asana task search --text "bug"
+ait-asana task search --status "New" --project <gid>
 ait-asana task search --assignee me --completed
 ait-asana task search --project <gid> --due-before 2026-04-01
-ait-asana task search --custom-field 111111=AAA           # filter by custom field (e.g. status)
-ait-asana task search --section <gid>                     # filter by section
+ait-asana task search --custom-field 111111=AAA
+ait-asana task search --section <gid>
 ```
 
 | Flag | Description |
@@ -104,6 +105,7 @@ ait-asana task search --section <gid>                     # filter by section
 | `--project TEXT` | Project GID |
 | `--section TEXT` | Section GID |
 | `--tag TEXT` | Tag GID |
+| `--status TEXT` | Status name (auto-resolves to custom field filter) |
 | `--completed` | Include completed tasks |
 | `--due-before TEXT` | Due date before (`YYYY-MM-DD`) |
 | `--due-after TEXT` | Due date after (`YYYY-MM-DD`) |
@@ -115,14 +117,20 @@ ait-asana task search --section <gid>                     # filter by section
 
 ```bash
 ait-asana task get <gid>                     # full task details
+ait-asana task get <gid> --history           # include status change history
+```
+
+`--history` fetches task stories and extracts status transitions as `status_history` array:
+```json
+[{"from": "New", "to": "In progress", "at": "2026-03-09T...", "by": "12345"}]
 ```
 
 ### task create
 
 ```bash
-ait-asana task create --name "Fix login bug" --project <gid>
+ait-asana task create --name "Fix bug" --project <gid>
 ait-asana task create --name "Subtask" --parent <gid>
-ait-asana task create --name "Task" --project <gid> --section <gid> --assignee me --due-on 2026-03-15
+ait-asana task create --name "Task" --project <gid> --section <gid> --status "New" --assignee me
 ```
 
 | Flag | Description |
@@ -136,15 +144,17 @@ ait-asana task create --name "Task" --project <gid> --section <gid> --assignee m
 | `--due-on TEXT` | Due date (`YYYY-MM-DD`) |
 | `--start-on TEXT` | Start date (`YYYY-MM-DD`) |
 | `--tags TEXT` | Comma-separated tag GIDs |
+| `--status TEXT` | Status name (auto-resolves to custom field enum value) |
 | `--custom-field TEXT` | `gid=value` pair (repeatable) |
 
 ### task update
 
 ```bash
 ait-asana task update <gid> --name "New name"
+ait-asana task update <gid> --status "In progress"
 ait-asana task update <gid> --assignee me --due-on 2026-04-01
 ait-asana task update <gid> --completed
-ait-asana task update <gid> --custom-field 12345=High --custom-field 67890=42
+ait-asana task update <gid> --custom-field 12345=High
 ```
 
 | Flag | Description |
@@ -155,150 +165,124 @@ ait-asana task update <gid> --custom-field 12345=High --custom-field 67890=42
 | `--due-on TEXT` | Due date (`YYYY-MM-DD`) |
 | `--start-on TEXT` | Start date (`YYYY-MM-DD`) |
 | `--completed / --no-completed` | Mark completed or incomplete |
+| `--status TEXT` | Status name (auto-resolves to custom field) |
 | `--custom-field TEXT` | `gid=value` pair (repeatable) |
+| `--archive-notes` | Save current description as comment before replacing |
 
-### task complete
-
-```bash
-ait-asana task complete <gid>                # shortcut for marking complete
-```
-
-### task delete
+### task complete / delete
 
 ```bash
+ait-asana task complete <gid>
 ait-asana task delete <gid>
 ```
 
 ### task subtasks
 
 ```bash
-ait-asana task subtasks <gid>               # list subtasks of a task
+ait-asana task subtasks <gid>
 ```
 
-### task add-project
+### task organization
 
 ```bash
-ait-asana task add-project <gid> --project <gid>
-ait-asana task add-project <gid> --project <gid> --section <gid>
-```
-
-### task remove-project
-
-```bash
+ait-asana task add-project <gid> --project <gid> [--section <gid>]
 ait-asana task remove-project <gid> --project <gid>
-```
-
-### task move
-
-```bash
-ait-asana task move <gid> --section <gid>   # move task to a section
+ait-asana task move <gid> --section <gid>
 ```
 
 ### task next
 
-Find the next actionable task: status = "New" and not blocked by any incomplete dependency.
+Find the next actionable task: matching status, not blocked by incomplete dependencies.
 
 ```bash
 ait-asana task next                          # find next "New" unblocked task
-ait-asana task next --project <gid>          # override project
-ait-asana task next --status "Planning"      # look for a different status
+ait-asana task next --project <gid>
+ait-asana task next --status "Planning"
+ait-asana task next --assignee me
 ```
 
-Auto-discovers the status custom field from the project and caches it in
-`~/.config/asana-cli/config.json` (per project, no manual GID setup needed).
-
-Returns the first matching task as JSON, or `null` if nothing is actionable.
-A dependency is considered resolved if the blocking task is completed in Asana.
+Auto-discovers the status custom field from the project (by name "Status"/"Статус") and caches it in `~/.config/asana-cli/config.json`. Returns first matching task or `null`.
 
 ### task dependencies / dependents
 
-Two sides of the same relationship:
-- **dependency** = this task is **waiting on** another task
-- **dependent** = another task is **blocked by** this task
-
 ```bash
-ait-asana task dependencies <gid>                       # list tasks this task is waiting on
-ait-asana task dependents <gid>                         # list tasks blocked by this task
+ait-asana task dependencies <gid>                       # tasks this task waits on
+ait-asana task dependents <gid>                         # tasks blocked by this task
 
-ait-asana task add-dependency <gid> --dependency <gid>  # this task waits on another
+ait-asana task add-dependency <gid> --dependency <gid>
 ait-asana task remove-dependency <gid> --dependency <gid>
 
-ait-asana task add-dependent <gid> --dependent <gid>    # another task is blocked by this one
+ait-asana task add-dependent <gid> --dependent <gid>
 ait-asana task remove-dependent <gid> --dependent <gid>
-```
-
-Example — task B is blocked by task A:
-
-```bash
-# Either direction works, same result:
-ait-asana task add-dependency B --dependency A   # B waits on A
-ait-asana task add-dependent A --dependent B     # A blocks B
 ```
 
 ### comment
 
 ```bash
-ait-asana comment list <task_gid>            # list comments on a task
+ait-asana comment list <task_gid>
 ait-asana comment add <task_gid> --text "Looks good"
-echo "Multiline note" | ait-asana comment add <task_gid> --text -
+echo "Multiline" | ait-asana comment add <task_gid> --text -
 ```
-
-| Flag | Description |
-|------|-------------|
-| `--text TEXT` | Comment text **(required)**, use `-` for stdin |
 
 ### comment check
 
-Find tasks that need a comment response from the agent. Searches the configured
-project for tasks with a given status and returns those where the last comment
-is not from the current user.
+Find tasks needing a comment response (status filter + last comment not from current user).
 
 ```bash
-ait-asana comment check                          # tasks with status "Need info"
-ait-asana comment check --status "Planning"      # use a different status
+ait-asana comment check                          # status "Need info"
+ait-asana comment check --status "Planning"
 ```
 
-| Flag | Description |
-|------|-------------|
-| `--status TEXT` | Status to filter tasks by (default: `Need info`) |
-
-Returns a JSON list of `{"task": {...}, "comment": {...}}` objects, or `[]` if
-there is nothing to respond to. Uses the project from `ASANA_PROJECT` env var.
+Returns `[{"task": {...}, "comment": {...}}]` or `[]`. Uses `ASANA_PROJECT`.
 
 ### tag
 
 ```bash
-ait-asana tag list                           # list tags in workspace
-ait-asana tag get <gid>                      # tag details
+ait-asana tag list
+ait-asana tag create --name "urgent" [--color dark-red]
+ait-asana tag get <gid>
 ```
+
+### custom-field
+
+```bash
+ait-asana custom-field get <gid>                                # field details + options
+ait-asana custom-field list-options <gid>                       # enum options only
+ait-asana custom-field set <task_gid> --field <gid> --value <v> # set value on task
+ait-asana custom-field remove <task_gid> --field <gid>          # clear value (set null)
+ait-asana custom-field add-option <gid> --name "New" [--color cool-gray]
+ait-asana custom-field update-option <option_gid> [--name X] [--color X] [--enabled/--disabled]
+```
+
+## Asana-Specific Details
+
+- **Status** is a custom field enum, not a native concept. The `--status` flag auto-discovers and resolves it.
+- **Rich text**: `--notes` and `--text` convert Markdown to Asana HTML internally.
+- **Pagination**: offset-based, handled by `get_all()`.
+- **Rate limit**: 429 + `Retry-After` header, up to 3 retries.
+- **Auth**: Bearer token (Personal Access Token).
+- **Config cache**: `~/.config/asana-cli/config.json` stores discovered custom field mappings per project.
 
 ## Examples
 
 ```bash
 # Full CRUD cycle
-ait-asana task create --name "Test" --project 123456
+ait-asana task create --name "Test" --project 123456 --status "New"
 ait-asana task get 789012
-ait-asana task update 789012 --assignee me --due-on 2026-03-15
+ait-asana task update 789012 --status "In progress" --assignee me
 ait-asana task complete 789012
 ait-asana task delete 789012
 
 # Search and filter
 ait-asana task search --text "deploy" --sort-by due_date
-ait-asana task list --assignee me --completed
-
-# Organization
-ait-asana task move 789012 --section 345678
-ait-asana task add-project 789012 --project 111111 --section 222222
+ait-asana task search --status "New" --project 123456
 
 # Dependencies
-ait-asana task add-dependency 789012 --dependency 111111  # 789012 waits on 111111
-ait-asana task dependencies 789012                        # list what 789012 waits on
-ait-asana task dependents 111111                          # list what 111111 blocks
+ait-asana task add-dependency 789012 --dependency 111111
 
 # Pipe multiline notes
 cat notes.md | ait-asana task create --name "With notes" --project 123456 --notes -
 
-# Check for comments needing a response
-ait-asana comment check                          # "Need info" tasks with unresponded comments
-ait-asana comment check --status "Planning"      # same, but for "Planning" status
+# Custom fields
+ait-asana custom-field set 789012 --field 12345 --value 67890
 ```
