@@ -23,6 +23,21 @@ def tag_list(ctx: click.Context) -> None:
     output(data, pretty=ctx.obj["pretty"])
 
 
+@tag_group.command("create")
+@click.option("--name", required=True, help="Tag name")
+@click.option("--color", default=None, help="Tag color (e.g. light-green, dark-blue)")
+@click.pass_context
+def tag_create(ctx: click.Context, name: str, color: str | None) -> None:
+    """Create a new tag."""
+    client = require_client(ctx)
+    ws = require_workspace(ctx)
+    body: dict = {"name": name, "workspace": ws}
+    if color:
+        body["color"] = color
+    data = client.post("/tags", body)
+    output(data, pretty=ctx.obj["pretty"])
+
+
 @tag_group.command("get")
 @click.argument("gid")
 @click.pass_context

@@ -26,6 +26,18 @@ def section_list(ctx: click.Context, project_gid: str) -> None:
     output(data, pretty=ctx.obj["pretty"])
 
 
+@section_group.command("create")
+@click.option("--project", "project_gid", required=True, help="Project GID")
+@click.option("--name", required=True, help="Section name")
+@click.pass_context
+def section_create(ctx: click.Context, project_gid: str, name: str) -> None:
+    """Create a new section in a project."""
+    client = require_client(ctx)
+    body: dict = {"name": name}
+    data = client.post(f"/projects/{project_gid}/sections", body)
+    output(data, pretty=ctx.obj["pretty"])
+
+
 @section_group.command("get")
 @click.argument("gid")
 @click.pass_context

@@ -25,6 +25,31 @@ def project_list(ctx: click.Context, archived: bool) -> None:
     output(data, pretty=ctx.obj["pretty"])
 
 
+@project_group.command("create")
+@click.option("--name", required=True, help="Project name")
+@click.option("--color", default=None, help="Project color (e.g. light-green, dark-blue)")
+@click.option("--layout", default="board", help="Layout: board or list (default: board)")
+@click.option("--public", is_flag=True, default=False, help="Make project public")
+@click.pass_context
+def project_create(
+    ctx: click.Context,
+    name: str,
+    color: str | None,
+    layout: str,
+    public: bool,
+) -> None:
+    """Create a new project."""
+    client = require_client(ctx)
+    ws = require_workspace(ctx)
+    body: dict = {"name": name, "workspace": ws, "default_view": layout}
+    if color:
+        body["color"] = color
+    if public:
+        body["public"] = True
+    data = client.post("/projects", body)
+    output(data, pretty=ctx.obj["pretty"])
+
+
 @project_group.command("get")
 @click.argument("gid")
 @click.pass_context
