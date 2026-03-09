@@ -96,6 +96,7 @@ from asana_cli.commands.task import task_group  # noqa: E402
 from asana_cli.commands.comment import comment_group  # noqa: E402
 from asana_cli.commands.tag import tag_group  # noqa: E402
 from asana_cli.commands.custom_field import custom_field_group  # noqa: E402
+from asana_cli.commands.backup import backup_group  # noqa: E402
 
 cli.add_command(config_group, "config")
 cli.add_command(workspace_group, "workspace")
@@ -105,3 +106,4 @@ cli.add_command(task_group, "task")
 cli.add_command(comment_group, "comment")
 cli.add_command(tag_group, "tag")
 cli.add_command(custom_field_group, "custom-field")
+cli.add_command(backup_group, "backup")
